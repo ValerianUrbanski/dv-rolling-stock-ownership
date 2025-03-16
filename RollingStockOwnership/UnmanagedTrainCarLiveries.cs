@@ -32,15 +32,18 @@ public class UnmanagedTrainCarLiveries
 			if (!(ControllerAPI.GetVanillaMode(VanillaMode.SummonCrewVehicle) is CommsRadioCrewVehicle summoner)) { throw new Exception("Crew vehicle radio mode could not be found!"); }
 
 			CarSpawner carSpawner = SingletonBehaviour<CarSpawner>.Instance;
-			var garageCarLiveries = carSpawner.crewVehicleGarages.Select((GarageType_v2 garageType) => garageType.garageCarLivery);
-			foreach (TrainCarLivery summonableLivery in garageCarLiveries.Union(carSpawner.vehiclesWithoutGarage))
+			var garageCarLiveries = from garage in carSpawner.crewVehicleGarages
+									where !garage.v1.ToString().ToLower().Contains("relic") // with the museum update all game loco were considerated in a garage
+									select garage.garageCarLiveries;
+			foreach(var garageCarLivery in garageCarLiveries)
 			{
-				if (summonableLivery == null) { continue; }
-
-				unmanagedLiveries.Add(summonableLivery);
+				foreach (TrainCarLivery summonableLivery in garageCarLivery.Union(carSpawner.vehiclesWithoutGarage))
+				{
+					if (summonableLivery == null) { continue; }
+					unmanagedLiveries.Add(summonableLivery);
+				}
 			}
-
-			Main.LogDebug(() => $"Set unmanaged liveries: [{string.Join(", ", unmanagedLiveries.Select(livery => livery.name))}]");
+				Main.LogDebug(() => $"Set unmanaged liveries: [{string.Join(", ", unmanagedLiveries.Select(livery => livery.name))}]");
 		}
 		catch (Exception e) { Main.OnCriticalFailure(e, "banning crew vehicles from purchase"); }
 	}

@@ -66,6 +66,9 @@ internal static class StartingConditions
 	private static List<TrainCar> AcquireStarterEquipment(StarterChoices choices, Vector3 position)
 	{
 		Inventory inventory = Inventory.Instance;
+#if DEBUG //debug purpose only
+		inventory.AddMoney(1000000d);
+#endif
 		UnusedTrainCarDeleter unusedTrainCarDeleter = UnusedTrainCarDeleter.Instance;
 		CarSpawner carSpawner = CarSpawner.Instance;
 		TrainCarLivery starterLoco = choices.SelectedLocomotiveType.ToV2().parentType.liveries.ElementAtRandom(random);
@@ -124,7 +127,7 @@ internal static class StartingConditions
 		wagonOptions.Sort((_, _) => random.NextDouble() < 0.5 ? -1 : 1);
 
 		GameObject? teleportTarget = null;
-		NonStationTeleporter? teleporter = null;
+		FastTravelDestination? teleporter = null;
 
 		PopupAPI.ShowOk(
 			title: "Rolling Stock Ownership",
@@ -136,8 +139,14 @@ internal static class StartingConditions
 			teleportTarget = GameObject.Find("TeleportHouse");
 			if (teleportTarget == null) { throw new Exception("Failed to find player house teleport target"); }
 			isTeleportTargetFound = true;
-
-			teleporter = teleportTarget.GetComponent<NonStationTeleporter>();
+			//new method to find the house over all fastTravelDestination
+			foreach(FastTravelDestination target in teleportTarget.GetComponents<FastTravelDestination>())
+			{
+				if(target.markerType == FastTravelDestination.MarkerType.House)
+				{
+					teleporter = target;
+				}
+			}		
 			if (teleporter == null) { throw new Exception("Failed to find player house teleporter"); }
 			isTeleporterFound = true;
 
@@ -207,7 +216,7 @@ internal static class StartingConditions
 		}).Then((_) => {
 			if (teleporter == null) { throw new Exception("Player house teleporter unexpectedly null"); }
 
-			teleporter.TeleportToStation();
+			teleporter.TeleportPlayer();
 			isPlayerTeleported = true;
 
 			// Restarting the spawn state manager causes the deleted equipment to respawn as soon as possible
@@ -238,7 +247,7 @@ internal static class StartingConditions
 		List<ShopItemData> shopItemsData = GlobalShopController.Instance.shopItemsData;
 		Main.LogDebug(() => $"All shop items:\n{{\n\t{string.Join(",\n\t", shopItemsData.Select(itemData => itemData.item.name))}\n}}");
 
-		string [] itemNames = { "shovel", "lighter" };
+		string [] itemNames = { "shovel", "lighter","oiler" }; // adding all necessary items to the player inventory
 		foreach (string itemName in itemNames)
 		{
 			bool isItemInInventory = Inventory.Instance.GetItemByName(itemName, false) != null;

@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using System.Threading;
 
 
 namespace RollingStockOwnership;
@@ -338,16 +339,29 @@ public class Equipment
 		var bogie2Track = isBogie2Derailed ? null : allTracks.Find(track => track.logicTrack.ID.FullID == bogie2TrackID);
 		bool isPlayerSpawnedCar = false;
 		bool isUniqueCar = false;
-		trainCar = CarSpawner.Instance.SpawnLoadedCar(carPrefab, ID, CarGUID, isPlayerSpawnedCar, isUniqueCar, position + WorldMover.currentMove, rotation, isBogie1Derailed, bogie1Track, bogie1PositionAlongTrack, isBogie2Derailed, bogie2Track, bogie2PositionAlongTrack, IsCoupledFront, IsCoupledRear);
-
+		trainCar = CarSpawner.Instance.SpawnLoadedCar(carPrefab, ID, CarGUID, isPlayerSpawnedCar, isUniqueCar, position + WorldMover.currentMove, rotation, isBogie1Derailed, bogie1Track, bogie1PositionAlongTrack, isBogie2Derailed, bogie2Track, bogie2PositionAlongTrack);
+		// using the new coupling in-game method
+		if(this._carGuidCoupledFront != null)
+		{
+			trainCar.frontCoupler.AttemptAutoCouple();
+		}
+		else{
+			trainCar.frontCoupler.preventAutoCouple = true;
+		}
+		if(this._carGuidCoupledRear != null)
+		{
+			trainCar.rearCoupler.AttemptAutoCouple();
+		}
+		else{
+			trainCar.rearCoupler.preventAutoCouple = true;
+		}
 		if (LoadedCargo != CargoType.None) { trainCar.logicCar.LoadCargo(trainCar.cargoCapacity, LoadedCargo, null); }
 		if (isExploded) { TrainCarExplosion.UpdateModelToExploded(trainCar); }
 
 		if (handbrakeApplication.HasValue) { trainCar.brakeSystem.SetHandbrakePosition(handbrakeApplication.Value); }
 		if (mainReservoirPressure.HasValue) { trainCar.brakeSystem.SetMainReservoirPressure(mainReservoirPressure.Value); }
 		if (controlReservoirPressure.HasValue) { trainCar.brakeSystem.SetControlReservoirPressure(controlReservoirPressure.Value); }
-		if (brakeCylinderPressure.HasValue) { trainCar.brakeSystem.ForceTargetTrainBrakeCylinderPressure(brakeCylinderPressure.Value); }
-
+		if (brakeCylinderPressure.HasValue) { trainCar.brakeSystem.ForceCylinderPressure(brakeCylinderPressure.Value); }
 		var carState = trainCar.GetComponent<CarStateSave>();
 		if (carStateSave != null && carState != null) { carState.SetCarStateSaveData(carStateSave); }
 
@@ -414,7 +428,7 @@ public class Equipment
 
 		// Train car position appears to be world absolute, so we have to compare to the player's world absolute position
 		// This is different from what UnusedTrainCarDeleter appears to be doing, but I'm not sure why
-		return (position - PlayerManager.GetWorldAbsolutePlayerPosition()).sqrMagnitude;
+		return (position - (PlayerManager.PlayerTransform.position - WorldMover.currentMove)).sqrMagnitude;
 	}
 
 	public float SquaredDistanceFromStation(StationController stationController)
