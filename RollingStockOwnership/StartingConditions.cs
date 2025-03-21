@@ -29,6 +29,7 @@ internal static class StartingConditions
 		if (!licenseManager.IsJobLicenseAcquired(TransitionHelpers.ToV2(JobLicenses.Shunting)))
 		{
 			licenseManager.AcquireJobLicense(TransitionHelpers.ToV2(JobLicenses.Shunting));
+			licenseManager.AcquireJobLicense(TransitionHelpers.ToV2(JobLicenses.LogisticalHaul)); // Left to be decided
 			isShuntingLicenseChanged = true;
 		}
 
@@ -117,7 +118,7 @@ internal static class StartingConditions
 		var locoOptions = new List<TrainCarType> { TrainCarType.LocoShunter, TrainCarType.LocoDM3, TrainCarType.LocoS060 };
 		var wagonOptions = new List<TrainCarType>
 		{
-			TrainCarType.StockBrown, // single route, lowest average pay, lowest average tonnage, highest average pay to tonnage ratio
+			TrainCarType.HopperCoveredBrown, // single route, lowest average pay, lowest average tonnage, highest average pay to tonnage ratio
 			TrainCarType.FlatbedStakes, // more routes, medium average pay, medium average tonnage, medium average pay to tonnage ratio
 			TrainCarType.HopperTeal // most routes, highest average pay, highest average tonnage, lowest average pay to tonnage ratio
 		};
